@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Sparkles,
   FolderKanban,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
@@ -21,9 +22,16 @@ export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAppSelector((state) => state.auth);
 
+  const isSuperAdmin = user?.role === "superadmin";
+
   const navItems = [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
-    { label: "Categories", path: "/categories", icon: FolderKanban },
+    ...(isSuperAdmin
+      ? [
+          { label: "Categories", path: "/categories", icon: FolderKanban },
+          { label: "Subcategories", path: "/subcategories", icon: Layers },
+        ]
+      : []),
     { label: "Services", path: "/services", icon: Briefcase },
     { label: "Users", path: "/users", icon: Users },
     { label: "Settings", path: "/settings", icon: Settings },

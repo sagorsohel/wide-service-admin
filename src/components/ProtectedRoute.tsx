@@ -12,4 +12,18 @@ export const ProtectedRoute: React.FC = () => {
   return <Outlet />;
 };
 
+export const SuperAdminRoute: React.FC = () => {
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (user?.role !== "superadmin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Outlet />;
+};
+
 export default ProtectedRoute;
