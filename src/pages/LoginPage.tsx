@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone, Lock, Eye, EyeOff, ShieldCheck, Sparkles, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
+import { Phone, Lock, Eye, EyeOff, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLoginMutation } from "@/redux/api/authApi";
@@ -15,41 +15,35 @@ export const LoginPage: React.FC = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [activeRoleTab, setActiveRoleTab] = useState<"superadmin" | "creator">("superadmin");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const [login, { isLoading }] = useLoginMutation();
 
-  // If already authenticated, redirect to /dashboard
+  // Redirect to dashboard if already logged in
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/dashboard", { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
-  const handleQuickFill = (role: "superadmin" | "creator") => {
-    setActiveRoleTab(role);
+  const handleFillCredentials = (phoneVal: string, passVal: string) => {
+    setPhone(phoneVal);
+    setPassword(passVal);
     setErrorMessage(null);
-    if (role === "superadmin") {
-      setPhone("01865625788");
-      setPassword("12345678");
-    } else {
-      setPhone("01865625789");
-      setPassword("12345678");
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!phone || !password) {
+    const trimmedPhone = phone.trim();
+    if (!trimmedPhone || !password) {
       setErrorMessage("Please enter both phone number and password");
       return;
     }
 
     try {
-      const response = await login({ phone: phone.trim(), password }).unwrap();
+      const response = await login({ phone: trimmedPhone, password }).unwrap();
 
       if (response.success && response.data) {
         dispatch(
@@ -64,9 +58,10 @@ export const LoginPage: React.FC = () => {
             token: response.data.token,
           })
         );
+        // Navigate based on successful credentials
         navigate("/dashboard", { replace: true });
       } else {
-        setErrorMessage(response.message || "Login failed. Please check credentials.");
+        setErrorMessage(response.message || "Invalid phone number or password.");
       }
     } catch (err: any) {
       const msg = err?.data?.message || err?.message || "Invalid phone number or password from database.";
@@ -86,43 +81,17 @@ export const LoginPage: React.FC = () => {
             Wide Service Admin
           </h1>
           <p className="text-sm text-slate-500">
-            Secure Control Center • Super Admin & Creator Portal
+            Enter your phone and password to sign in
           </p>
         </div>
 
         {/* Login Card */}
         <Card className="shadow-xl border-slate-200/80 bg-white/95 backdrop-blur">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg text-slate-800">Sign In to Dashboard</CardTitle>
+            <CardTitle className="text-lg text-slate-800">Admin Login</CardTitle>
             <CardDescription>
-              Enter your registered phone and password to continue.
+              Sign in with your phone number and password.
             </CardDescription>
-
-            {/* Role Switcher Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg mt-3">
-              <button
-                type="button"
-                onClick={() => handleQuickFill("superadmin")}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
-                  activeRoleTab === "superadmin"
-                    ? "bg-white text-blue-600 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" /> Super Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill("creator")}
-                className={`py-1.5 text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-1.5 ${
-                  activeRoleTab === "creator"
-                    ? "bg-white text-indigo-600 shadow-xs"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5" /> Creator
-              </button>
-            </div>
           </CardHeader>
 
           <CardContent className="space-y-4 pt-0">
@@ -155,11 +124,9 @@ export const LoginPage: React.FC = () => {
 
               {/* Password Field */}
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
-                    Password
-                  </label>
-                </div>
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -188,25 +155,25 @@ export const LoginPage: React.FC = () => {
               >
                 {isLoading ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Verifying from Database...
+                    <Loader2 className="w-4 h-4 animate-spin" /> Verifying...
                   </>
                 ) : (
                   <>
-                    Login to Dashboard <ArrowRight className="w-4 h-4" />
+                    Sign In <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </Button>
             </form>
 
             {/* Quick Demo Fill Buttons */}
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-3 border-t border-slate-100">
               <p className="text-[11px] font-medium text-slate-400 uppercase text-center mb-2">
-                Quick-Fill Demo Credentials (From Database)
+                Quick-Fill Demo Accounts
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => handleQuickFill("superadmin")}
+                  onClick={() => handleFillCredentials("01865625788", "12345678")}
                   className="p-2 text-left rounded-lg border border-slate-200 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/50 transition-colors"
                 >
                   <p className="text-xs font-semibold text-slate-800">Super Admin</p>
@@ -216,7 +183,7 @@ export const LoginPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => handleQuickFill("creator")}
+                  onClick={() => handleFillCredentials("01865625789", "12345678")}
                   className="p-2 text-left rounded-lg border border-slate-200 hover:border-indigo-400 bg-slate-50 hover:bg-indigo-50/50 transition-colors"
                 >
                   <p className="text-xs font-semibold text-slate-800">Creator User</p>
@@ -230,7 +197,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Footer info */}
         <p className="text-center text-xs text-slate-400">
-          Backend connected to MySQL database: <span className="font-mono text-slate-600">wideservice</span>
+          Connected to backend API: <span className="font-mono text-slate-600">http://localhost:5000</span>
         </p>
       </div>
     </div>
