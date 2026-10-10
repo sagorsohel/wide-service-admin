@@ -63,7 +63,7 @@ export const categoryApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Category"],
+      invalidatesTags: ["Category", "Dashboard"],
     }),
     updateCategory: builder.mutation<SingleCategoryResponse, UpdateCategoryRequest>({
       query: ({ id, ...body }) => ({
@@ -71,14 +71,14 @@ export const categoryApi = baseApi.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["Category"],
+      invalidatesTags: ["Category", "Dashboard"],
     }),
     deleteCategory: builder.mutation<{ success: boolean; message: string; data: { id: number } }, number>({
       query: (id) => ({
         url: `/categories/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Category"],
+      invalidatesTags: ["Category", "Dashboard"],
     }),
   }),
 });

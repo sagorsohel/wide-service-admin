@@ -69,7 +69,7 @@ export const subcategoryApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Subcategory"],
+      invalidatesTags: ["Subcategory", "Dashboard"],
     }),
     updateSubcategory: builder.mutation<SingleSubcategoryResponse, UpdateSubcategoryRequest>({
       query: ({ id, ...body }) => ({
@@ -77,14 +77,14 @@ export const subcategoryApi = baseApi.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["Subcategory"],
+      invalidatesTags: ["Subcategory", "Dashboard"],
     }),
     deleteSubcategory: builder.mutation<{ success: boolean; message: string; data: { id: number } }, number>({
       query: (id) => ({
         url: `/subcategories/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Subcategory"],
+      invalidatesTags: ["Subcategory", "Dashboard"],
     }),
   }),
 });

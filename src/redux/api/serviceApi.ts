@@ -106,7 +106,7 @@ export const serviceApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Services"],
+      invalidatesTags: ["Services", "Dashboard"],
     }),
     updateService: builder.mutation<SingleServiceResponse, UpdateServiceRequest>({
       query: ({ id, ...body }) => ({
@@ -114,14 +114,14 @@ export const serviceApi = baseApi.injectEndpoints({
         method: "PUT",
         body,
       }),
-      invalidatesTags: ["Services"],
+      invalidatesTags: ["Services", "Dashboard"],
     }),
     deleteService: builder.mutation<{ success: boolean; message: string; data: { id: number } }, number>({
       query: (id) => ({
         url: `/services/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Services"],
+      invalidatesTags: ["Services", "Dashboard"],
     }),
   }),
 });

@@ -30,11 +30,12 @@ export const AdminLayout: React.FC = () => {
       ? [
           { label: "Categories", path: "/categories", icon: FolderKanban },
           { label: "Subcategories", path: "/subcategories", icon: Layers },
+          { label: "Users", path: "/users", icon: Users }
         ]
       : []),
     { label: "Services", path: "/services", icon: Briefcase },
-    { label: "Users", path: "/users", icon: Users },
-    { label: "Settings", path: "/settings", icon: Settings },
+    ,
+  
   ];
 
   const handleLogout = () => {
