@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Users,
   Briefcase,
-  Settings,
   Bell,
   Search,
   LogOut,
@@ -34,8 +33,6 @@ export const AdminLayout: React.FC = () => {
         ]
       : []),
     { label: "Services", path: "/services", icon: Briefcase },
-    ,
-  
   ];
 
   const handleLogout = () => {
