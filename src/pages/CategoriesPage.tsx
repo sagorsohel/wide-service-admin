@@ -279,11 +279,11 @@ export const CategoriesPage: React.FC = () => {
                       {/* Image / Icon Cell */}
                       <td className="py-3 px-6">
                         {category.image ? (
-                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white flex items-center justify-center p-1 shadow-2xs">
                             <img
                               src={category.image}
                               alt={category.name}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-contain"
                               onError={(e) => {
                                 (e.target as HTMLImageElement).src =
                                   "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=150";
@@ -475,11 +475,11 @@ export const CategoriesPage: React.FC = () => {
               {/* Preview Thumbnail */}
               {image && (
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0">
+                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 p-1 flex items-center justify-center">
                     <img
                       src={image}
                       alt="Preview"
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src =
                           "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=150";
