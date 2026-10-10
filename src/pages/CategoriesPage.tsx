@@ -25,12 +25,21 @@ import {
   type Category,
 } from "@/redux/api/categoryApi";
 import { useUploadImageMutation } from "@/redux/api/uploadApi";
+import { Pagination } from "@/components/ui/Pagination";
 
 export const CategoriesPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
   const isSuperAdmin = user?.role === "superadmin";
 
-  const { data: response, isLoading, isError, refetch } = useGetCategoriesQuery();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const { data: response, isLoading, isError, refetch } = useGetCategoriesQuery({
+    page: currentPage,
+    limit: pageSize,
+    search: searchTerm,
+  });
   const [createCategory, { isLoading: isCreating }] = useCreateCategoryMutation();
   const [updateCategory, { isLoading: isUpdating }] = useUpdateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting }] = useDeleteCategoryMutation();
@@ -38,7 +47,6 @@ export const CategoriesPage: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [searchTerm, setSearchTerm] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -54,10 +62,10 @@ export const CategoriesPage: React.FC = () => {
   const [targetCategory, setTargetCategory] = useState<Category | null>(null);
 
   const categories = response?.data || [];
+  const totalCategories = response?.total ?? categories.length;
+  const totalPages = response?.totalPages ?? (Math.ceil(totalCategories / pageSize) || 1);
 
-  const filteredCategories = categories.filter((cat) =>
-    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCategories = categories;
 
   const openCreateModal = () => {
     if (!isSuperAdmin) return;
@@ -214,7 +222,10 @@ export const CategoriesPage: React.FC = () => {
                 type="text"
                 placeholder="Search categories by name..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
               />
             </div>
@@ -332,6 +343,24 @@ export const CategoriesPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Global Pagination Controls (1 2 3 Next Prev) */}
+          {!isLoading && !isError && totalCategories > 0 && (
+            <div className="border-t border-slate-200 px-6 py-2 bg-slate-50/50">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(p) => setCurrentPage(p)}
+                totalItems={totalCategories}
+                pageSize={pageSize}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[5, 10, 20, 50]}
+              />
             </div>
           )}
         </CardContent>

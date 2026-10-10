@@ -25,6 +25,7 @@ import {
   type Subcategory,
 } from "@/redux/api/subcategoryApi";
 import { useUploadImageMutation } from "@/redux/api/uploadApi";
+import { Pagination } from "@/components/ui/Pagination";
 
 export const SubcategoriesPage: React.FC = () => {
   const { data: catResponse } = useGetCategoriesQuery();
@@ -32,15 +33,20 @@ export const SubcategoriesPage: React.FC = () => {
 
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const {
     data: subResponse,
     isLoading,
     isError,
     refetch,
-  } = useGetSubcategoriesQuery(
-    selectedCategoryFilter !== "all" ? { categoryId: Number(selectedCategoryFilter) } : undefined
-  );
+  } = useGetSubcategoriesQuery({
+    categoryId: selectedCategoryFilter !== "all" ? Number(selectedCategoryFilter) : undefined,
+    search: searchTerm,
+    page: currentPage,
+    limit: pageSize,
+  });
 
   const [createSubcategory, { isLoading: isCreating }] = useCreateSubcategoryMutation();
   const [updateSubcategory, { isLoading: isUpdating }] = useUpdateSubcategoryMutation();
@@ -65,10 +71,10 @@ export const SubcategoriesPage: React.FC = () => {
   const [targetSubcategory, setTargetSubcategory] = useState<Subcategory | null>(null);
 
   const subcategories = subResponse?.data || [];
+  const totalSubcategories = subResponse?.total ?? subcategories.length;
+  const totalPages = subResponse?.totalPages ?? (Math.ceil(totalSubcategories / pageSize) || 1);
 
-  const filteredSubcategories = subcategories.filter((sub) =>
-    sub.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSubcategories = subcategories;
 
   const openCreateModal = () => {
     setEditingSubcategory(null);
@@ -209,7 +215,10 @@ export const SubcategoriesPage: React.FC = () => {
               <div className="w-full sm:w-60">
                 <select
                   value={selectedCategoryFilter}
-                  onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedCategoryFilter(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-700"
                 >
                   <option value="all">All Categories</option>
@@ -228,7 +237,10 @@ export const SubcategoriesPage: React.FC = () => {
                   type="text"
                   placeholder="Search subcategory by name..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
               </div>
@@ -355,6 +367,24 @@ export const SubcategoriesPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Global Pagination Controls (1 2 3 Next Prev) */}
+          {!isLoading && !isError && totalSubcategories > 0 && (
+            <div className="border-t border-slate-200 px-6 py-2 bg-slate-50/50">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(p) => setCurrentPage(p)}
+                totalItems={totalSubcategories}
+                pageSize={pageSize}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setCurrentPage(1);
+                }}
+                pageSizeOptions={[5, 10, 20, 50]}
+              />
             </div>
           )}
         </CardContent>

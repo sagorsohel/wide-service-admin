@@ -13,7 +13,18 @@ export interface Subcategory {
 export interface SubcategoriesResponse {
   success: boolean;
   count: number;
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
   data: Subcategory[];
+}
+
+export interface GetSubcategoriesParams {
+  categoryId?: number;
+  search?: string;
+  page?: number;
+  limit?: number;
 }
 
 export interface SingleSubcategoryResponse {
@@ -37,11 +48,19 @@ export interface UpdateSubcategoryRequest {
 
 export const subcategoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getSubcategories: builder.query<SubcategoriesResponse, { categoryId?: number } | void>({
-      query: (params) => ({
-        url: "/subcategories",
-        params: params && params.categoryId ? { categoryId: params.categoryId } : undefined,
-      }),
+    getSubcategories: builder.query<SubcategoriesResponse, GetSubcategoriesParams | void>({
+      query: (params) => {
+        if (!params) return { url: "/subcategories" };
+        const queryParams: Record<string, any> = {};
+        if (params.categoryId) queryParams.categoryId = params.categoryId;
+        if (params.search) queryParams.search = params.search;
+        if (params.page !== undefined) queryParams.page = params.page;
+        if (params.limit !== undefined) queryParams.limit = params.limit;
+        return {
+          url: "/subcategories",
+          params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+        };
+      },
       providesTags: ["Subcategory"],
     }),
     createSubcategory: builder.mutation<SingleSubcategoryResponse, CreateSubcategoryRequest>({

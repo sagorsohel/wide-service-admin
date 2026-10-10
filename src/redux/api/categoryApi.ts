@@ -11,7 +11,17 @@ export interface Category {
 export interface CategoriesResponse {
   success: boolean;
   count: number;
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
   data: Category[];
+}
+
+export interface GetCategoriesParams {
+  page?: number;
+  limit?: number;
+  search?: string;
 }
 
 export interface SingleCategoryResponse {
@@ -33,8 +43,18 @@ export interface UpdateCategoryRequest {
 
 export const categoryApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getCategories: builder.query<CategoriesResponse, void>({
-      query: () => "/categories",
+    getCategories: builder.query<CategoriesResponse, GetCategoriesParams | void>({
+      query: (params) => {
+        if (!params) return "/categories";
+        const queryParams: Record<string, any> = {};
+        if (params.page !== undefined) queryParams.page = params.page;
+        if (params.limit !== undefined) queryParams.limit = params.limit;
+        if (params.search) queryParams.search = params.search;
+        return {
+          url: "/categories",
+          params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+        };
+      },
       providesTags: ["Category"],
     }),
     createCategory: builder.mutation<SingleCategoryResponse, CreateCategoryRequest>({
