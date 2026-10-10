@@ -1,9 +1,12 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Users, ShoppingBag, Activity } from "lucide-react";
+import { TrendingUp, Users, ShoppingBag, Activity, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
+import { useAppSelector } from "@/redux/store";
 
 export const DashboardPage: React.FC = () => {
+  const { user } = useAppSelector((state) => state.auth);
+
   const stats = [
     {
       title: "Total Service Bookings",
@@ -37,17 +40,35 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-900">Dashboard Overview</h2>
-          <p className="text-sm text-slate-500">
-            Real-time management for Wide Service Mobile App, Web, and Operations.
+      {/* Welcome Banner */}
+      <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur text-xs font-semibold">
+            {user?.role === "superadmin" ? (
+              <>
+                <ShieldCheck className="w-3.5 h-3.5" /> Super Admin Access
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3.5 h-3.5" /> Creator Portal Access
+              </>
+            )}
+          </div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Welcome back, {user?.name || "Administrator"}!
+          </h2>
+          <p className="text-sm text-blue-100">
+            Logged in with phone: <span className="font-mono font-medium">{user?.phone}</span> • Connected dynamically via MySQL & Redux Toolkit.
           </p>
         </div>
+
         <div className="flex items-center gap-3">
-          <Button variant="outline">Export Reports</Button>
-          <Button>Create Service</Button>
+          <Button variant="secondary" className="bg-white text-blue-700 hover:bg-blue-50 font-semibold shadow-xs">
+            Export Reports
+          </Button>
+          <Button className="bg-blue-800 hover:bg-blue-900 text-white border border-blue-400/30">
+            Create Service
+          </Button>
         </div>
       </div>
 
@@ -77,30 +98,30 @@ export const DashboardPage: React.FC = () => {
         })}
       </div>
 
-      {/* Connected Repositories Status Card */}
+      {/* Connected Architecture Status */}
       <Card>
         <CardHeader>
-          <CardTitle>Architecture Status</CardTitle>
-          <CardDescription>Wide Service Multi-tier deployment links</CardDescription>
+          <CardTitle>Architecture & Dynamic Database Status</CardTitle>
+          <CardDescription>Wide Service Multi-tier deployment links & database connection</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="divide-y divide-slate-100">
             <div className="py-3 flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-slate-800">wide-service-app</p>
-                <p className="text-xs text-slate-500">React Native Expo Mobile Client</p>
+                <p className="text-sm font-semibold text-slate-800">wide-service-backend</p>
+                <p className="text-xs text-slate-500">Express.js + Drizzle ORM + MySQL (wideservice)</p>
               </div>
-              <span className="text-xs font-medium px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">
-                Ready
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Connected (Port 5000)
               </span>
             </div>
             <div className="py-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-800">wide-service-admin</p>
-                <p className="text-xs text-slate-500">React + React Router v7 + shadcn/ui</p>
+                <p className="text-xs text-slate-500">React + React Router v7 + Redux Toolkit RTK Query</p>
               </div>
-              <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-200">
-                Current App
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" /> Active Session
               </span>
             </div>
             <div className="py-3 flex items-center justify-between">
@@ -108,8 +129,17 @@ export const DashboardPage: React.FC = () => {
                 <p className="text-sm font-semibold text-slate-800">wide-service-web</p>
                 <p className="text-xs text-slate-500">Next.js App Router + shadcn/ui</p>
               </div>
-              <span className="text-xs font-medium px-2 py-0.5 rounded bg-purple-50 text-purple-600 border border-purple-200">
-                Verified
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                Ready
+              </span>
+            </div>
+            <div className="py-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-800">wide-service-app</p>
+                <p className="text-xs text-slate-500">React Native Expo SDK 57 Client</p>
+              </div>
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                Ready
               </span>
             </div>
           </div>
@@ -118,3 +148,5 @@ export const DashboardPage: React.FC = () => {
     </div>
   );
 };
+
+export default DashboardPage;
