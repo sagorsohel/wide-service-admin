@@ -40,7 +40,7 @@ export const subcategoryApi = baseApi.injectEndpoints({
     getSubcategories: builder.query<SubcategoriesResponse, { categoryId?: number } | void>({
       query: (params) => ({
         url: "/subcategories",
-        params: params?.categoryId ? { categoryId: params.categoryId } : undefined,
+        params: params && params.categoryId ? { categoryId: params.categoryId } : undefined,
       }),
       providesTags: ["Subcategory"],
     }),
