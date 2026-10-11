@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Phone, Lock, Eye, EyeOff, AlertCircle, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -164,6 +164,22 @@ export const LoginPage: React.FC = () => {
                 )}
               </Button>
             </form>
+
+            {/* Creator Sign-Up Callout */}
+            <div className="pt-2 text-center">
+              <div className="p-3 rounded-xl bg-indigo-50/80 border border-indigo-100 flex items-center justify-between gap-3 text-left">
+                <div>
+                  <p className="text-xs font-bold text-indigo-950">New Service Provider?</p>
+                  <p className="text-[11px] text-indigo-700">List and manage your offerings</p>
+                </div>
+                <Link
+                  to="/creator-sign-up"
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-colors shrink-0 inline-flex items-center gap-1"
+                >
+                  Join as Creator →
+                </Link>
+              </div>
+            </div>
 
             {/* Quick Demo Fill Buttons */}
             <div className="pt-3 border-t border-slate-100">

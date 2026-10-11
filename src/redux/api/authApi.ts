@@ -19,6 +19,26 @@ export interface LoginResponse {
   };
 }
 
+export interface RegisterCreatorRequest {
+  name: string;
+  phone: string;
+  email?: string;
+  password: string;
+}
+
+export interface RegisterCreatorResponse {
+  success: boolean;
+  message: string;
+  data: {
+    id: number;
+    name: string;
+    phone: string;
+    email?: string | null;
+    role: "creator";
+    token: string;
+  };
+}
+
 export interface ProfileResponse {
   success: boolean;
   data: User;
@@ -34,6 +54,14 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Auth"],
     }),
+    registerCreator: builder.mutation<RegisterCreatorResponse, RegisterCreatorRequest>({
+      query: (userData) => ({
+        url: "/auth/register",
+        method: "POST",
+        body: { ...userData, role: "creator" },
+      }),
+      invalidatesTags: ["Auth"],
+    }),
     getMe: builder.query<ProfileResponse, void>({
       query: () => "/auth/me",
       providesTags: ["Auth"],
@@ -41,4 +69,4 @@ export const authApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useLoginMutation, useGetMeQuery } = authApi;
+export const { useLoginMutation, useRegisterCreatorMutation, useGetMeQuery } = authApi;

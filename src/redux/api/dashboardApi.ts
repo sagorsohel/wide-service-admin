@@ -4,6 +4,7 @@ export interface DashboardCounts {
   services: number;
   activeServices: number;
   inactiveServices: number;
+  pendingServices?: number;
   categories: number;
   subcategories: number;
   users: number;
@@ -40,7 +41,7 @@ export interface RecentServiceItem {
   subcategoryName: string | null;
   phone: string;
   whatsapp: string | null;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "pending" | "rejected";
   createdAt: string;
 }
 

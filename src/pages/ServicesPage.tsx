@@ -25,6 +25,7 @@ import {
   Check,
   Grid,
   List,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -40,6 +41,14 @@ import { useGetCategoriesQuery } from "@/redux/api/categoryApi";
 import { useGetSubcategoriesQuery } from "@/redux/api/subcategoryApi";
 import { useUploadImageMutation, useUploadMultipleImagesMutation } from "@/redux/api/uploadApi";
 import { Pagination } from "@/components/ui/Pagination";
+import { ServiceSchedulePicker } from "@/components/ServiceSchedulePicker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const ServicesPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
@@ -58,7 +67,7 @@ export const ServicesPage: React.FC = () => {
   // API Queries
   const { data: servicesResponse, isLoading, isError, refetch } = useGetServicesQuery({
     categoryId: categoryFilter !== "all" ? Number(categoryFilter) : undefined,
-    status: statusFilter !== "all" ? (statusFilter as "active" | "inactive") : undefined,
+    status: statusFilter !== "all" ? (statusFilter as any) : "all",
     search: searchTerm,
     page: currentPage,
     limit: pageSize,
@@ -82,13 +91,16 @@ export const ServicesPage: React.FC = () => {
   // Form States
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [schedule, setSchedule] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [subcategoryId, setSubcategoryId] = useState<number | "">("");
   const [phone, setPhone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [status, setStatus] = useState<"active" | "inactive" | "pending" | "rejected">(
+    isCreator ? "pending" : "active"
+  );
   const [logo, setLogo] = useState("");
   const [serviceImages, setServiceImages] = useState<string[]>([]);
 
@@ -120,13 +132,14 @@ export const ServicesPage: React.FC = () => {
     setEditingService(null);
     setName("");
     setBusinessName("");
+    setSchedule("");
     setCategoryId("");
     setSubcategoryId("");
     setPhone("");
     setWhatsapp("");
     setAddress("");
     setDescription("");
-    setStatus("active");
+    setStatus(isSuperAdmin ? "active" : "pending");
     setLogo("");
     setServiceImages([]);
     setFormError(null);
@@ -138,7 +151,8 @@ export const ServicesPage: React.FC = () => {
     if (!canManageServices) return;
     setEditingService(service);
     setName(service.name);
-    setBusinessName(service.businessName);
+    setBusinessName(service.businessName || "");
+    setSchedule(service.schedule || "");
     setCategoryId(service.categoryId);
     setSubcategoryId(service.subcategoryId || "");
     setPhone(service.phone);
@@ -174,10 +188,10 @@ export const ServicesPage: React.FC = () => {
       const res = await uploadImage(formData).unwrap();
       if (res?.url) {
         setLogo(res.url);
-        setUploadSuccessMsg("Logo uploaded successfully!");
+        setUploadSuccessMsg("Profile Image uploaded successfully!");
       }
     } catch (err: any) {
-      setFormError(err?.data?.message || err?.message || "Failed to upload logo.");
+      setFormError(err?.data?.message || err?.message || "Failed to upload Profile Image.");
     } finally {
       if (logoInputRef.current) logoInputRef.current.value = "";
     }
@@ -240,10 +254,6 @@ export const ServicesPage: React.FC = () => {
       setFormError("Service name is required.");
       return;
     }
-    if (!businessName.trim()) {
-      setFormError("Business name is required.");
-      return;
-    }
     if (!categoryId) {
       setFormError("Please select a Category first.");
       return;
@@ -257,33 +267,42 @@ export const ServicesPage: React.FC = () => {
       return;
     }
 
+    // Creator cannot change or approve status. Only Super Admin can set status.
+    const finalStatus: "active" | "inactive" | "pending" | "rejected" = !isSuperAdmin
+      ? editingService
+        ? editingService.status
+        : "pending"
+      : status;
+
     try {
       if (editingService) {
         await updateService({
           id: editingService.id,
           name: name.trim(),
-          businessName: businessName.trim(),
+          businessName: businessName.trim() || null,
+          schedule: schedule.trim() || null,
           categoryId: Number(categoryId),
           subcategoryId: subcategoryId ? Number(subcategoryId) : null,
           phone: phone.trim(),
           whatsapp: whatsapp.trim() || null,
           address: address.trim(),
           description: description.trim() || null,
-          status,
+          status: finalStatus,
           logo: logo.trim() || null,
           images: serviceImages,
         }).unwrap();
       } else {
         await createService({
           name: name.trim(),
-          businessName: businessName.trim(),
+          businessName: businessName.trim() || null,
+          schedule: schedule.trim() || null,
           categoryId: Number(categoryId),
           subcategoryId: subcategoryId ? Number(subcategoryId) : null,
           phone: phone.trim(),
           whatsapp: whatsapp.trim() || null,
           address: address.trim(),
           description: description.trim() || null,
-          status,
+          status: finalStatus,
           logo: logo.trim() || null,
           images: serviceImages,
         }).unwrap();
@@ -332,7 +351,7 @@ export const ServicesPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
             <span>
-              You are logged in as <strong className="font-semibold">Creator</strong>. You have full CRUD access to create, publish, and manage your services.
+              You are logged in as <strong className="font-semibold">Creator</strong>. Showing only your own services. Any new service you submit will be pending review until approved by Super Admin.
             </span>
           </div>
         </div>
@@ -342,13 +361,17 @@ export const ServicesPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Services Catalog</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+              {isCreator ? "My Services" : "Services Catalog"}
+            </h2>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
               {services.length} Total
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-0.5">
-            Manage provider listings, multiple photo showcases, direct contact details, and categories.
+            {isCreator
+              ? "Manage your service offerings, showcase images, business details, and track approval status."
+              : "Manage provider listings, multiple photo showcases, direct contact details, and categories."}
           </p>
         </div>
 
@@ -432,42 +455,52 @@ export const ServicesPage: React.FC = () => {
               />
             </div>
 
-            {/* Filter Dropdowns */}
+            {/* Filter Dropdowns (Shadcn Select) */}
             <div className="flex flex-wrap items-center gap-2.5">
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-600">
-                <Filter className="w-3.5 h-3.5 text-slate-400" />
-                <span className="font-semibold text-slate-500">Category:</span>
-                <select
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-600">
+                <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="font-semibold text-slate-500 shrink-0">Category:</span>
+                <Select
                   value={categoryFilter}
-                  onChange={(e) => {
-                    setCategoryFilter(e.target.value);
+                  onValueChange={(val) => {
+                    setCategoryFilter(val);
                     setCurrentPage(1);
                   }}
-                  className="bg-transparent text-slate-800 font-medium focus:outline-none cursor-pointer"
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="border-0 shadow-none bg-transparent h-7 text-xs font-medium text-slate-800 p-0 focus:ring-0 gap-1.5 cursor-pointer">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-600">
-                <span className="font-semibold text-slate-500">Status:</span>
-                <select
+              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-600">
+                <span className="font-semibold text-slate-500 shrink-0">Status:</span>
+                <Select
                   value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
+                  onValueChange={(val) => {
+                    setStatusFilter(val);
                     setCurrentPage(1);
                   }}
-                  className="bg-transparent text-slate-800 font-medium focus:outline-none cursor-pointer"
                 >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
+                  <SelectTrigger className="border-0 shadow-none bg-transparent h-7 text-xs font-medium text-slate-800 p-0 focus:ring-0 gap-1.5 cursor-pointer">
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending Review</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* View Toggle */}
@@ -564,15 +597,31 @@ export const ServicesPage: React.FC = () => {
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${
                             service.status === "active"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : service.status === "pending"
+                              ? "bg-amber-50 text-amber-800 border border-amber-300"
+                              : service.status === "rejected"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
                               : "bg-slate-100 text-slate-600 border border-slate-200"
                           }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full mr-1 ${
-                              service.status === "active" ? "bg-emerald-500" : "bg-slate-400"
+                              service.status === "active"
+                                ? "bg-emerald-500"
+                                : service.status === "pending"
+                                ? "bg-amber-500"
+                                : service.status === "rejected"
+                                ? "bg-rose-500"
+                                : "bg-slate-400"
                             }`}
                           />
-                          {service.status === "active" ? "Active" : "Inactive"}
+                          {service.status === "active"
+                            ? "Active"
+                            : service.status === "pending"
+                            ? "Pending"
+                            : service.status === "rejected"
+                            ? "Rejected"
+                            : "Inactive"}
                         </span>
                         {service.creatorName && (
                           <span className="text-[10px] text-slate-400 truncate max-w-[100px]" title={`By ${service.creatorName}`}>
@@ -583,10 +632,12 @@ export const ServicesPage: React.FC = () => {
                       <h3 className="font-bold text-slate-900 text-sm mt-1 truncate group-hover:text-blue-600 transition-colors">
                         {service.name}
                       </h3>
-                      <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mt-0.5 truncate">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="truncate">{service.businessName}</span>
-                      </p>
+                      {service.businessName && (
+                        <p className="text-xs font-medium text-slate-500 flex items-center gap-1 mt-0.5 truncate">
+                          <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate">{service.businessName}</span>
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -633,6 +684,14 @@ export const ServicesPage: React.FC = () => {
                         </a>
                       )}
                     </div>
+
+                    {/* Operating Schedule */}
+                    {service.schedule && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-medium bg-blue-50/70 text-blue-900 border border-blue-100 px-2.5 py-1 rounded-md">
+                        <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span className="truncate">{service.schedule}</span>
+                      </div>
+                    )}
 
                     {/* Showcase Images Gallery Thumbnails */}
                     {service.images && service.images.length > 0 && (
@@ -727,7 +786,15 @@ export const ServicesPage: React.FC = () => {
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 text-sm">{service.name}</p>
-                            <p className="text-slate-500 text-xs">{service.businessName}</p>
+                            {service.businessName && (
+                              <p className="text-slate-500 text-xs">{service.businessName}</p>
+                            )}
+                            {service.schedule && (
+                              <p className="text-blue-600 text-[11px] font-medium flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3 text-blue-500 shrink-0" />
+                                <span className="truncate max-w-[200px]">{service.schedule}</span>
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -766,10 +833,20 @@ export const ServicesPage: React.FC = () => {
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
                             service.status === "active"
                               ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : service.status === "pending"
+                              ? "bg-amber-50 text-amber-800 border border-amber-300"
+                              : service.status === "rejected"
+                              ? "bg-rose-50 text-rose-700 border border-rose-200"
                               : "bg-slate-100 text-slate-600 border border-slate-200"
                           }`}
                         >
-                          {service.status === "active" ? "Active" : "Inactive"}
+                          {service.status === "active"
+                            ? "Active"
+                            : service.status === "pending"
+                            ? "Pending"
+                            : service.status === "rejected"
+                            ? "Rejected"
+                            : "Inactive"}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right">
@@ -885,24 +962,24 @@ export const ServicesPage: React.FC = () => {
                     <label className="text-xs font-semibold text-slate-700 block">
                       Select Category <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      value={categoryId}
-                      onChange={(e) => {
-                        const val = e.target.value === "" ? "" : Number(e.target.value);
-                        setCategoryId(val);
-                        // Reset subcategory when category changes
+                    <Select
+                      value={categoryId === "" ? undefined : String(categoryId)}
+                      onValueChange={(val) => {
+                        setCategoryId(val === "" ? "" : Number(val));
                         setSubcategoryId("");
                       }}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
-                      required
                     >
-                      <option value="">-- Select Category --</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full text-sm h-10 bg-white">
+                        <SelectValue placeholder="-- Select Category --" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={String(cat.id)}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Subcategory Selection (Optional) */}
@@ -911,27 +988,35 @@ export const ServicesPage: React.FC = () => {
                       <span>Sub Category</span>
                       <span className="text-[11px] font-normal text-slate-400">(Optional)</span>
                     </label>
-                    <select
-                      value={subcategoryId}
-                      onChange={(e) => {
-                        setSubcategoryId(e.target.value === "" ? "" : Number(e.target.value));
-                      }}
+                    <Select
+                      value={subcategoryId === "" ? "none" : String(subcategoryId)}
                       disabled={categoryId === "" || isLoadingSubcategories}
-                      className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer"
+                      onValueChange={(val) => {
+                        setSubcategoryId(val === "none" || val === "" ? "" : Number(val));
+                      }}
                     >
-                      <option value="">
-                        {categoryId === ""
-                          ? "Select a category first"
-                          : isLoadingSubcategories
-                          ? "Loading subcategories..."
-                          : "-- None / Optional --"}
-                      </option>
-                      {subcategories.map((sub) => (
-                        <option key={sub.id} value={sub.id}>
-                          {sub.name}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full text-sm h-10 bg-white disabled:bg-slate-100">
+                        <SelectValue
+                          placeholder={
+                            categoryId === ""
+                              ? "Select a category first"
+                              : isLoadingSubcategories
+                              ? "Loading subcategories..."
+                              : subcategories.length === 0
+                              ? "No subcategories available"
+                              : "-- None / Optional --"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- None / Optional --</SelectItem>
+                        {subcategories.map((sub) => (
+                          <SelectItem key={sub.id} value={String(sub.id)}>
+                            {sub.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -958,10 +1043,11 @@ export const ServicesPage: React.FC = () => {
                     />
                   </div>
 
-                  {/* Business Name */}
+                  {/* Business Name (Optional) */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 block">
-                      Business Name <span className="text-red-500">*</span>
+                    <label className="text-xs font-semibold text-slate-700 block flex items-center justify-between">
+                      <span>Business Name</span>
+                      <span className="text-[11px] font-normal text-slate-400">(Optional)</span>
                     </label>
                     <input
                       type="text"
@@ -969,7 +1055,6 @@ export const ServicesPage: React.FC = () => {
                       onChange={(e) => setBusinessName(e.target.value)}
                       placeholder="e.g. Apex Cool Engineering Ltd."
                       className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      required
                     />
                   </div>
                 </div>
@@ -989,33 +1074,66 @@ export const ServicesPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Status Toggle */}
+                {/* Status Toggle (Super Admin Only) */}
                 <div className="flex items-center gap-3">
                   <label className="text-xs font-semibold text-slate-700">Listing Status:</label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setStatus("active")}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                        status === "active"
-                          ? "bg-emerald-600 text-white shadow-2xs"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
-                    >
-                      Active
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStatus("inactive")}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                        status === "inactive"
-                          ? "bg-slate-800 text-white shadow-2xs"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                      }`}
-                    >
-                      Inactive
-                    </button>
-                  </div>
+                  {!isSuperAdmin ? (
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold ${
+                          (editingService ? editingService.status : "pending") === "active"
+                            ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
+                            : (editingService ? editingService.status : "pending") === "rejected"
+                            ? "bg-rose-50 text-rose-800 border border-rose-300"
+                            : "bg-amber-50 text-amber-800 border border-amber-300"
+                        }`}
+                      >
+                        <Clock className="w-3.5 h-3.5" />
+                        {editingService
+                          ? editingService.status.charAt(0).toUpperCase() + editingService.status.slice(1)
+                          : "Pending Review (Creator Default)"}
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        (Only Super Admin can approve or change status)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setStatus("active")}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                          status === "active"
+                            ? "bg-emerald-600 text-white shadow-2xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Active
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStatus("pending")}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                          status === "pending"
+                            ? "bg-amber-500 text-white shadow-2xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Pending
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStatus("inactive")}
+                        className={`px-3 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
+                          status === "inactive"
+                            ? "bg-slate-800 text-white shadow-2xs"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Inactive
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1082,11 +1200,17 @@ export const ServicesPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* 4. LOGO or Image Upload (Single) */}
+              {/* 4. Operating Schedule (Optional) */}
+              <ServiceSchedulePicker value={schedule} onChange={setSchedule} />
+
+              {/* 5. Profile Image Upload (Single) */}
               <div className="space-y-3 pt-1 border-t border-slate-100">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                  4. Logo or Main Image
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
+                    5. Profile Image
+                  </span>
+                  <span className="text-[11px] font-normal text-slate-400">(Optional)</span>
+                </div>
 
                 <input
                   type="file"
@@ -1104,24 +1228,24 @@ export const ServicesPage: React.FC = () => {
                     {isUploadingLogo ? (
                       <div className="flex items-center justify-center gap-2 text-blue-600 py-2">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="text-xs font-semibold">Uploading Logo to server...</span>
+                        <span className="text-xs font-semibold">Uploading Profile Image to server...</span>
                       </div>
                     ) : (
                       <div className="flex items-center justify-center gap-2 text-slate-600 py-1">
                         <UploadCloud className="w-5 h-5 text-blue-600" />
-                        <span className="text-xs font-medium">Click to upload Logo / Main Image</span>
+                        <span className="text-xs font-medium">Click to upload Profile Image</span>
                       </div>
                     )}
                   </div>
 
                   {logo && (
                     <div className="relative w-16 h-16 rounded-xl border border-slate-200 overflow-hidden shrink-0 shadow-2xs group">
-                      <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                      <img src={logo} alt="Profile Image" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => setLogo("")}
                         className="absolute inset-0 bg-slate-900/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        title="Remove Logo"
+                        title="Remove Profile Image"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -1134,16 +1258,16 @@ export const ServicesPage: React.FC = () => {
                   type="text"
                   value={logo}
                   onChange={(e) => setLogo(e.target.value)}
-                  placeholder="Or paste Logo URL directly (https://...)"
+                  placeholder="Or paste Profile Image URL directly (https://...)"
                   className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-200 bg-slate-50 font-mono text-slate-600"
                 />
               </div>
 
-              {/* 5. Services Images as Multiple Upload */}
+              {/* 6. Services Images as Multiple Upload */}
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 uppercase tracking-wider block">
-                    5. Services Images (Multiple Upload)
+                    6. Services Images (Multiple Upload)
                   </span>
                   <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
                     {serviceImages.length} images selected
@@ -1335,6 +1459,19 @@ export const ServicesPage: React.FC = () => {
                   {viewingService.address}
                 </p>
               </div>
+
+              {/* Operating Schedule */}
+              {viewingService.schedule && (
+                <div className="p-3 rounded-xl border border-blue-200/80 bg-blue-50/60 text-xs">
+                  <span className="text-[10px] uppercase font-bold text-blue-600 block mb-1">
+                    Operating Schedule
+                  </span>
+                  <p className="font-semibold text-slate-900 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    {viewingService.schedule}
+                  </p>
+                </div>
+              )}
 
               {/* Showcase Images Gallery */}
               {viewingService.images && viewingService.images.length > 0 && (

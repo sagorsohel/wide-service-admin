@@ -26,6 +26,13 @@ import {
 } from "@/redux/api/subcategoryApi";
 import { useUploadImageMutation } from "@/redux/api/uploadApi";
 import { Pagination } from "@/components/ui/Pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const SubcategoriesPage: React.FC = () => {
   const { data: catResponse } = useGetCategoriesQuery();
@@ -211,23 +218,27 @@ export const SubcategoriesPage: React.FC = () => {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex flex-1 flex-col sm:flex-row items-center gap-3">
-              {/* Category Dropdown Filter */}
+              {/* Category Dropdown Filter (Shadcn Select) */}
               <div className="w-full sm:w-60">
-                <select
+                <Select
                   value={selectedCategoryFilter}
-                  onChange={(e) => {
-                    setSelectedCategoryFilter(e.target.value);
+                  onValueChange={(val) => {
+                    setSelectedCategoryFilter(val);
                     setCurrentPage(1);
                   }}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-700"
                 >
-                  <option value="all">All Categories</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full text-sm h-10 border-slate-200 bg-white font-medium text-slate-700">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Search Field */}
@@ -426,26 +437,26 @@ export const SubcategoriesPage: React.FC = () => {
                 </div>
               )}
 
-              {/* 1. Parent Category Selector (First field) */}
+              {/* 1. Parent Category Selector (Shadcn Select) */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider block">
                   Select Parent Category <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={formCategoryId}
-                  onChange={(e) => setFormCategoryId(Number(e.target.value))}
-                  className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 font-medium text-slate-800"
-                  required
+                <Select
+                  value={formCategoryId === "" ? undefined : String(formCategoryId)}
+                  onValueChange={(val) => setFormCategoryId(Number(val))}
                 >
-                  <option value="" disabled>
-                    -- Select a Category --
-                  </option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full text-sm h-10 border-slate-200 bg-white font-medium text-slate-800">
+                    <SelectValue placeholder="-- Select a Category --" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={String(cat.id)}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* 2. Subcategory Name */}

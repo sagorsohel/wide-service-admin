@@ -11,10 +11,12 @@ import {
   Sparkles,
   FolderKanban,
   Layers,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
 import { logout } from "@/redux/slices/authSlice";
+import { useGetServicesQuery } from "@/redux/api/serviceApi";
 
 export const AdminLayout: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -23,13 +25,26 @@ export const AdminLayout: React.FC = () => {
 
   const isSuperAdmin = user?.role === "superadmin";
 
+  // Query pending services count for live sidebar badge (superadmin only)
+  const { data: pendingData } = useGetServicesQuery(
+    { status: "pending", limit: 1 },
+    { skip: !isSuperAdmin }
+  );
+  const pendingCount = pendingData?.total ?? 0;
+
   const navItems = [
     { label: "Dashboard", path: "/dashboard", icon: LayoutDashboard },
     ...(isSuperAdmin
       ? [
+          {
+            label: "Pending Services",
+            path: "/pending-services",
+            icon: Clock,
+            badge: pendingCount,
+          },
           { label: "Categories", path: "/categories", icon: FolderKanban },
           { label: "Subcategories", path: "/subcategories", icon: Layers },
-          { label: "Users", path: "/users", icon: Users }
+          { label: "Users", path: "/users", icon: Users },
         ]
       : []),
     { label: "Services", path: "/services", icon: Briefcase },
@@ -94,7 +109,12 @@ export const AdminLayout: React.FC = () => {
                 }
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                {item.label}
+                <span className="flex-1 truncate">{item.label}</span>
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="inline-flex items-center justify-center px-2 py-0.5 text-[11px] font-bold rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                    {item.badge}
+                  </span>
+                )}
               </NavLink>
             );
           })}

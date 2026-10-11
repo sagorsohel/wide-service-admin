@@ -121,10 +121,23 @@ export const DashboardPage: React.FC = () => {
                 {counts?.services ?? 0}
               </div>
             )}
-            <div className="flex items-center gap-2 mt-2 text-xs">
+            <div className="flex items-center gap-2 mt-2 text-xs flex-wrap">
               <span className="inline-flex items-center text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                 ● {counts?.activeServices ?? 0} Active
               </span>
+              {isSuperAdmin ? (
+                <Link
+                  to="/pending-services"
+                  className="inline-flex items-center text-amber-800 font-bold bg-amber-50 hover:bg-amber-100 px-2.5 py-0.5 rounded-full border border-amber-300 transition-colors"
+                  title="View Pending Services"
+                >
+                  ● {counts?.pendingServices ?? 0} Pending
+                </Link>
+              ) : (
+                <span className="inline-flex items-center text-amber-800 font-semibold bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-300">
+                  ● {counts?.pendingServices ?? 0} Pending
+                </span>
+              )}
               <span className="text-slate-500">
                 {counts?.inactiveServices ?? 0} Inactive
               </span>

@@ -3,7 +3,8 @@ import { baseApi } from "./baseApi";
 export interface Service {
   id: number;
   name: string;
-  businessName: string;
+  businessName?: string | null;
+  schedule?: string | null;
   logo?: string | null;
   address: string;
   phone: string;
@@ -14,7 +15,7 @@ export interface Service {
   subcategoryId?: number | null;
   subcategoryName?: string | null;
   description?: string | null;
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "pending" | "rejected";
   userId?: number | null;
   creatorName?: string | null;
   createdAt?: string;
@@ -40,7 +41,7 @@ export interface SingleServiceResponse {
 export interface GetServicesParams {
   categoryId?: number;
   subcategoryId?: number;
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | "pending" | "rejected" | "all";
   search?: string;
   page?: number;
   limit?: number;
@@ -48,7 +49,8 @@ export interface GetServicesParams {
 
 export interface CreateServiceRequest {
   name: string;
-  businessName: string;
+  businessName?: string | null;
+  schedule?: string | null;
   logo?: string | null;
   address: string;
   phone: string;
@@ -57,13 +59,14 @@ export interface CreateServiceRequest {
   categoryId: number;
   subcategoryId?: number | null;
   description?: string | null;
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | "pending" | "rejected";
 }
 
 export interface UpdateServiceRequest {
   id: number;
   name?: string;
-  businessName?: string;
+  businessName?: string | null;
+  schedule?: string | null;
   logo?: string | null;
   address?: string;
   phone?: string;
@@ -72,7 +75,7 @@ export interface UpdateServiceRequest {
   categoryId?: number;
   subcategoryId?: number | null;
   description?: string | null;
-  status?: "active" | "inactive";
+  status?: "active" | "inactive" | "pending" | "rejected";
 }
 
 export const serviceApi = baseApi.injectEndpoints({
@@ -116,6 +119,17 @@ export const serviceApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Services", "Dashboard"],
     }),
+    updateServiceStatus: builder.mutation<
+      SingleServiceResponse,
+      { id: number; status: "active" | "inactive" | "pending" | "rejected" }
+    >({
+      query: ({ id, status }) => ({
+        url: `/services/${id}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["Services", "Dashboard"],
+    }),
     deleteService: builder.mutation<{ success: boolean; message: string; data: { id: number } }, number>({
       query: (id) => ({
         url: `/services/${id}`,
@@ -131,5 +145,6 @@ export const {
   useGetServiceByIdQuery,
   useCreateServiceMutation,
   useUpdateServiceMutation,
+  useUpdateServiceStatusMutation,
   useDeleteServiceMutation,
 } = serviceApi;
