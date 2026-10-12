@@ -45,6 +45,7 @@ export const AdminLayout: React.FC = () => {
           { label: "Categories", path: "/categories", icon: FolderKanban },
           { label: "Subcategories", path: "/subcategories", icon: Layers },
           { label: "Users", path: "/users", icon: Users },
+          { label: "Push Notifications", path: "/notifications", icon: Bell },
         ]
       : []),
     { label: "Services", path: "/services", icon: Briefcase },
