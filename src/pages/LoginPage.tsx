@@ -213,7 +213,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Footer info */}
         <p className="text-center text-xs text-slate-400">
-          Connected to backend API: <span className="font-mono text-slate-600">http://localhost:5000</span>
+          Connected to backend API: <span className="font-mono text-slate-600">https://apiwideservice.widetechbd.com</span>
         </p>
       </div>
     </div>
