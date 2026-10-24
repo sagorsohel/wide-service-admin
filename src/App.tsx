@@ -11,6 +11,7 @@ import { ServicesPage } from "./pages/ServicesPage";
 import { PendingServicesPage } from "./pages/PendingServicesPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
+import { AppReleasesPage } from "./pages/AppReleasesPage";
 
 export function App() {
   return (
@@ -35,6 +36,7 @@ export function App() {
               <Route path="/subcategories" element={<SubcategoriesPage />} />
               <Route path="/pending-services" element={<PendingServicesPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/app-releases" element={<AppReleasesPage />} />
             </Route>
           </Route>
         </Route>

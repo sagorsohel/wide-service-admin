@@ -12,6 +12,7 @@ import {
   FolderKanban,
   Layers,
   Clock,
+  Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAppDispatch, useAppSelector } from "@/redux/store";
@@ -46,6 +47,7 @@ export const AdminLayout: React.FC = () => {
           { label: "Subcategories", path: "/subcategories", icon: Layers },
           { label: "Users", path: "/users", icon: Users },
           { label: "Push Notifications", path: "/notifications", icon: Bell },
+          { label: "App Releases (APK/iOS)", path: "/app-releases", icon: Smartphone },
         ]
       : []),
     { label: "Services", path: "/services", icon: Briefcase },
