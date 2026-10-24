@@ -62,6 +62,8 @@ export const AppReleasesPage: React.FC = () => {
     .filter((r) => r.platform === "ios")
     .reduce((sum, r) => sum + (r.downloadsCount || 0), 0);
 
+  const [uploadMethod, setUploadMethod] = useState<"link" | "file">("link");
+
   // File upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -84,7 +86,23 @@ export const AppReleasesPage: React.FC = () => {
         );
       }
     } catch (err: any) {
-      setErrorMessage(err?.data?.message || err?.message || "ফাইল আপলোডে সমস্যা হয়েছে");
+      console.error("Upload error details:", err);
+      if (
+        err?.status === 413 ||
+        err?.originalStatus === 413 ||
+        err?.message?.includes("413") ||
+        err?.error?.includes("413")
+      ) {
+        setErrorMessage(
+          "সার্ভার এরর: ফাইল সাইজ অনেক বড় (413 Content Too Large)। সার্ভার Nginx-এ client_max_body_size সেট করা নেই। অনুগ্রহ করে 'সরাসরি লিঙ্ক' অপশন সিলেক্ট করে আপনার EAS ডাউনলোড লিঙ্কটি পেস্ট করুন।"
+        );
+      } else {
+        setErrorMessage(
+          err?.data?.message ||
+            err?.message ||
+            "সার্ভারে ফাইল আপলোড হতে পারেনি (সম্ভবত Nginx সাইজ লিমিট বা CORS)। অনুগ্রহ করে 'সরাসরি লিঙ্ক' ব্যবহার করুন।"
+        );
+      }
     }
   };
 
@@ -371,37 +389,77 @@ export const AppReleasesPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 2. Direct File Upload Dropzone */}
+                {/* 2. Method Selector (Link vs File) */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    ফাইল আপলোড করুন (.apk, .ipa, .aab, .zip — সর্বোচ্চ 150MB)
+                    অ্যাপ যুক্ত করার মাধ্যম নির্বাচন করুন
                   </label>
-                  <div className="relative border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-blue-50/20 transition-all cursor-pointer group">
-                    <input
-                      type="file"
-                      accept=".apk,.ipa,.aab,.zip,.plist"
-                      onChange={handleFileUpload}
-                      disabled={isUploading}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
-                    />
-                    <div className="flex flex-col items-center justify-center">
-                      <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                        {isUploading ? (
-                          <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
-                        ) : (
-                          <UploadCloud className="w-6 h-6" />
-                        )}
-                      </div>
-                      <span className="text-sm font-bold text-slate-800">
-                        {isUploading
-                          ? "ফাইল আপলোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন"
-                          : "কম্পিউটার থেকে ফাইল সিলেক্ট করুন বা ড্র্যাগ করে ছাড়ুন"}
-                      </span>
-                      <span className="text-xs text-slate-400 mt-1">
-                        Android এর জন্য .apk ফাইল এবং iOS এর জন্য .ipa ফাইল নির্বাচন করুন
-                      </span>
-                    </div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setUploadMethod("link")}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        uploadMethod === "link"
+                          ? "bg-blue-50 border-blue-500 text-blue-700 ring-2 ring-blue-500/20"
+                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <LinkIcon className="w-4 h-4 text-blue-600" />
+                      <span>EAS / ক্লাউড ডাউনলোড লিঙ্ক (প্রস্তাবিত)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setUploadMethod("file")}
+                      className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                        uploadMethod === "file"
+                          ? "bg-blue-50 border-blue-500 text-blue-700 ring-2 ring-blue-500/20"
+                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      <UploadCloud className="w-4 h-4 text-blue-600" />
+                      <span>কম্পিউটার থেকে ফাইল আপলোড</span>
+                    </button>
                   </div>
+
+                  {uploadMethod === "file" ? (
+                    <div className="relative border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-6 text-center bg-slate-50/50 hover:bg-blue-50/20 transition-all cursor-pointer group">
+                      <input
+                        type="file"
+                        accept=".apk,.ipa,.aab,.zip,.plist"
+                        onChange={handleFileUpload}
+                        disabled={isUploading}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10"
+                      />
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                          {isUploading ? (
+                            <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+                          ) : (
+                            <UploadCloud className="w-6 h-6" />
+                          )}
+                        </div>
+                        <span className="text-sm font-bold text-slate-800">
+                          {isUploading
+                            ? "ফাইল আপলোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন"
+                            : "কম্পিউটার থেকে ফাইল সিলেক্ট করুন বা ড্র্যাগ করে ছাড়ুন"}
+                        </span>
+                        <span className="text-xs text-slate-400 mt-1">
+                          Android এর জন্য .apk ফাইল এবং iOS এর জন্য .ipa ফাইল (বড় ফাইলের জন্য Nginx client_max_body_size প্রয়োজন)
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                      <div>
+                        <strong className="block font-bold">সুপারফাস্ট EAS লিংক সুবিধা:</strong>
+                        <span>
+                          আপনার টার্মিনালে পাওয়া EAS লিংকটি নিচের বক্সে পেস্ট করে দিন। এতে আপনার সার্ভারের ব্যান্ডউইথ বা স্টোরেজ খরচ হবে না এবং ভিজিটররা ক্লাউড থেকে সর্বোচ্চ গতিতে ডাউনলোড করতে পারবে।
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. Direct Download Link */}
@@ -412,14 +470,14 @@ export const AppReleasesPage: React.FC = () => {
                       ডাউনলোড URL (সরাসরি লিঙ্ক)
                     </span>
                     <span className="text-[11px] font-normal text-slate-400">
-                      *ফাইল আপলোড করলে অটো পূরণ হবে অথবা EAS/Drive লিংক পেস্ট করুন
+                      *EAS বা ক্লাউড লিঙ্ক পেস্ট করুন
                     </span>
                   </label>
                   <input
                     type="url"
                     value={downloadUrl}
                     onChange={(e) => setDownloadUrl(e.target.value)}
-                    placeholder="https://..."
+                    placeholder="https://expo.dev/accounts/.../builds/... বা https://..."
                     required
                     className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   />
