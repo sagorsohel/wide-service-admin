@@ -62,13 +62,15 @@ export const AppReleasesPage: React.FC = () => {
     .filter((r) => r.platform === "ios")
     .reduce((sum, r) => sum + (r.downloadsCount || 0), 0);
 
-  const [uploadMethod, setUploadMethod] = useState<"link" | "file">("link");
+  const [uploadMethod, setUploadMethod] = useState<"link" | "file">("file");
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
 
   // File upload handler
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setSelectedFileName(file.name);
     setErrorMessage(null);
     setUploadSuccessMessage(null);
 
@@ -442,10 +444,12 @@ export const AppReleasesPage: React.FC = () => {
                         <span className="text-sm font-bold text-slate-800">
                           {isUploading
                             ? "ফাইল আপলোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন"
+                            : selectedFileName
+                            ? `সিলেক্টেড ফাইল: ${selectedFileName}`
                             : "কম্পিউটার থেকে ফাইল সিলেক্ট করুন বা ড্র্যাগ করে ছাড়ুন"}
                         </span>
                         <span className="text-xs text-slate-400 mt-1">
-                          Android এর জন্য .apk ফাইল এবং iOS এর জন্য .ipa ফাইল (বড় ফাইলের জন্য Nginx client_max_body_size প্রয়োজন)
+                          Android এর জন্য .apk ফাইল এবং iOS এর জন্য .ipa ফাইল নির্বাচন করুন
                         </span>
                       </div>
                     </div>
